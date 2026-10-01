@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; font-src 'self'; connect-src 'self' https://api.anthropic.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="スイング帳">
+<meta name="theme-color" content="#10231A">
+<meta name="format-detection" content="telephone=no">
+<title>スイング帳</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:500;font-display:swap;src:url(barlow-condensed-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:600;font-display:swap;src:url(barlow-condensed-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:swap;src:url(barlow-condensed-latin-700-normal.woff2) format("woff2")}
+:root{
+  --turf:#10231A; --turf-2:#162D22; --turf-3:#1F3D2F; --line:#2B4C3C;
+  --chalk:#EEF1EA; --chalk-2:#A9BDB1; --chalk-3:#7A9587;
+  --flag:#F4C542; --flag-ink:#2B2206; --red:#FF5A47; --sky:#6EC8F0; --ok:#7BD88F;
+  --num:"Barlow Condensed","Hiragino Sans",system-ui,sans-serif;
+  --sys:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px); --sar:env(safe-area-inset-right,0px);
+  --padx:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--turf);color:var(--chalk);font-family:var(--sys);font-size:15px;line-height:1.55;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+body{overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,select{font:inherit;font-size:16px;-webkit-user-select:text;user-select:text;color:var(--chalk)}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:.38;cursor:default}
+:focus-visible{outline:2px solid var(--flag);outline-offset:2px}
+[hidden]{display:none!important}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.selectable{-webkit-user-select:text;user-select:text}
+svg{display:block}
+
+.screen{position:fixed;inset:0;display:none;flex-direction:column;height:100vh;height:100dvh}
+.screen.active{display:flex}
+.topbar{flex:none;display:flex;align-items:center;gap:6px;padding:calc(var(--sat) + 6px) calc(var(--sar) + 10px) 6px calc(var(--sal) + 10px);min-height:52px}
+.icon-btn{flex:none;width:42px;height:42px;display:grid;place-items:center;border-radius:12px;color:var(--chalk)}
+.icon-btn:active{background:var(--turf-3)}
+.icon-btn svg{width:24px;height:24px}
+
+/* buttons, chips, segs */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border-radius:12px;background:var(--turf-2);border:1px solid var(--line);font-weight:600;font-size:15px;line-height:1.3}
+.btn:active{background:var(--turf-3)}
+.btn.primary{background:var(--flag);color:var(--flag-ink);border-color:transparent}
+.btn.primary:active{filter:brightness(.92)}
+.btn.danger{color:var(--red)}
+.btn.sm{padding:7px 11px;font-size:13px;border-radius:10px}
+.btn.wide{width:100%}
+.btn svg{width:18px;height:18px}
+.chip{padding:6px 12px;border-radius:999px;border:1px solid var(--line);font-size:13px;color:var(--chalk-2);background:transparent;white-space:nowrap}
+.chip.on{background:rgba(244,197,66,.14);border-color:var(--flag);color:var(--flag)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips.scroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1 * var(--padx));padding:0 var(--padx)}
+.chips.scroll::-webkit-scrollbar{display:none}
+.seg{display:flex;background:var(--turf-2);border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px}
+.seg button{flex:1;padding:7px 4px;border-radius:8px;font-size:13px;color:var(--chalk-2);white-space:nowrap}
+.seg button.on{background:var(--turf-3);color:var(--flag);font-weight:600}
+.seg .num{font-size:16px}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:9px 0}
+.row > .lbl{color:var(--chalk-3);font-size:12px;min-width:56px}
+.row > .seg{flex:1}
+.spacer{flex:1}
+.note{color:var(--chalk-3);font-size:12.5px;margin:8px 0;line-height:1.6}
+.h3{font-size:13px;font-weight:700;color:var(--chalk-2);margin:16px 0 6px}
+.h3:first-child{margin-top:4px}
+
+/* ===== home ===== */
+.brand{margin:0 0 0 6px;font-size:23px;font-weight:800;letter-spacing:.06em;flex:1;display:flex;align-items:baseline;gap:8px}
+.brand-mark{width:22px;height:22px;align-self:center}
+.view{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px calc(var(--sar) + var(--padx)) 24px calc(var(--sal) + var(--padx))}
+.view[hidden]{display:none}
+.mainnav{flex:none;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);background:var(--turf-2);padding-bottom:var(--sab)}
+.mainnav button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 0 7px;font-size:11px;color:var(--chalk-3)}
+.mainnav button svg{width:24px;height:24px}
+.mainnav button.on{color:var(--flag)}
+.lib-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 12px}
+.lib-actions .btn{white-space:nowrap;padding:12px 8px}
+.tip{display:flex;gap:10px;align-items:flex-start;background:var(--turf-2);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px;color:var(--chalk-2)}
+.tip p{margin:0;flex:1}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+@media (min-width:620px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:900px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.card{display:block;text-align:left;background:var(--turf-2);border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative}
+.card:active{transform:scale(.985)}
+.card.sel{border-color:var(--flag);box-shadow:0 0 0 2px var(--flag)}
+.thumb{display:block;position:relative;aspect-ratio:3/4;background:#0a1510}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.club{position:absolute;left:8px;bottom:8px;background:var(--flag);color:var(--flag-ink);font:700 21px/1 var(--num);padding:4px 7px 2px;border-radius:7px}
+.badges{position:absolute;right:6px;top:6px;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.badge{font-size:10.5px;padding:2px 7px;border-radius:999px;background:rgba(6,14,10,.72);color:var(--sky);border:1px solid rgba(110,200,240,.5)}
+.badge.best{color:var(--flag);border-color:rgba(244,197,66,.6)}
+.badge.warn{color:var(--red);border-color:rgba(255,90,71,.55)}
+.pick{position:absolute;left:8px;top:8px;width:30px;height:30px;border-radius:50%;background:var(--flag);color:var(--flag-ink);display:grid;place-items:center;font:700 18px var(--num)}
+.meta{display:block;padding:8px 10px 10px}
+.ttl{display:block;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub{display:block;font-size:12px;color:var(--chalk-3)}
+.empty{padding:28px 6px;color:var(--chalk-2)}
+.empty h2{font-size:18px;margin:0 0 6px;color:var(--chalk)}
+.empty ol{padding-left:1.3em;margin:10px 0;font-size:14px}
+.empty li{margin:4px 0}
+.cmp-bar{position:sticky;bottom:0;display:flex;gap:8px;align-items:center;background:var(--turf-3);border:1px solid var(--line);border-radius:14px;padding:8px 8px 8px 12px;margin-top:12px;font-size:13px}
+.cmp-bar span{flex:1}
+.lib-foot{color:var(--chalk-3);font-size:12px;text-align:center;margin:18px 0 0}
+
+/* practice */
+.focus{background:var(--turf-2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px}
+.focus h3{margin:0 0 4px;font-size:16px;display:flex;gap:8px;align-items:baseline}
+.focus h3 .rank{font:700 20px/1 var(--num);color:var(--flag)}
+.focus .point{font-size:13.5px;color:var(--chalk-2);margin:4px 0 8px}
+.why{font-size:12.5px;color:var(--chalk-2);margin:6px 0;padding-left:10px;border-left:2px solid var(--line)}
+.why b{color:var(--chalk);font-weight:600}
+.drill{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:var(--turf)}
+.drill b{display:block;font-size:14px}
+.drill .reps{font:600 14px var(--num);color:var(--flag);margin-left:6px}
+.drill p{margin:2px 0 0;font-size:13px;color:var(--chalk-2)}
+details.more summary{cursor:pointer;color:var(--sky);font-size:13px;margin-top:8px;list-style:none}
+details.more summary::-webkit-details-marker{display:none}
+.noteitem{background:var(--turf-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 8px}
+.noteitem header{display:flex;align-items:center;gap:8px}
+.noteitem header b{flex:1;font-size:14px}
+.noteitem pre{white-space:pre-wrap;font:inherit;font-size:13px;color:var(--chalk-2);margin:6px 0 0;max-height:9.5em;overflow:hidden;position:relative}
+.noteitem.open pre{max-height:none}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.tag{font-size:11px;color:var(--sky);border:1px solid rgba(110,200,240,.4);border-radius:999px;padding:1px 7px}
+.tend{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.tend .club-s{font:700 18px var(--num);color:var(--flag);min-width:34px}
+.aibox{background:var(--turf-2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px}
+.md{font-size:14px;line-height:1.7}
+.md h4{font-size:14.5px;margin:12px 0 4px;color:var(--flag)}
+.md h4:first-child{margin-top:0}
+.md p{margin:6px 0}
+.md ul,.md ol{margin:4px 0;padding-left:1.3em}
+.md li{margin:3px 0}
+.md code{font-family:var(--num);color:var(--sky)}
+
+/* chat */
+#vChat{display:flex;flex-direction:column;padding:0}
+#vChat[hidden]{display:none}
+.chat-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px calc(var(--sar) + var(--padx)) 10px calc(var(--sal) + var(--padx))}
+.msg{max-width:88%;margin:8px 0;padding:9px 12px;border-radius:14px;font-size:14.5px;line-height:1.65;-webkit-user-select:text;user-select:text}
+.msg.user{margin-left:auto;background:var(--turf-3);border-bottom-right-radius:4px;white-space:pre-wrap}
+.msg.bot{background:var(--turf-2);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg .src{display:block;font-size:11px;color:var(--chalk-3);margin-top:6px}
+.msg .att{display:inline-block;font-size:11.5px;color:var(--flag);border:1px solid rgba(244,197,66,.5);border-radius:999px;padding:0 8px;margin-bottom:4px}
+.msg .acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.composer{flex:none;border-top:1px solid var(--line);padding:8px calc(var(--sar) + 10px) 8px calc(var(--sal) + 10px);background:var(--turf)}
+.composer .cbar{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.composer .cin{display:flex;gap:8px;align-items:flex-end}
+.composer textarea{flex:1;resize:none;max-height:120px;min-height:42px;border-radius:14px;border:1px solid var(--line);background:var(--turf-2);padding:9px 12px;line-height:1.45}
+.send{width:44px;height:42px;border-radius:12px;background:var(--flag);color:var(--flag-ink);display:grid;place-items:center;flex:none}
+.send svg{width:22px;height:22px}
+.chat-empty{color:var(--chalk-2);font-size:14px;padding:14px 4px}
+.chat-empty .chips{margin-top:10px}
+
+/* ===== player / compare ===== */
+.ptitle{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-weight:600}
+.ptitle .club-badge{background:var(--flag);color:var(--flag-ink);font:700 18px/1 var(--num);padding:4px 6px 2px;border-radius:6px}
+.ptitle .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptitle .star{color:var(--flag)}
+.stage{position:relative;flex:1 1 auto;min-height:0;background:#000;overflow:hidden;touch-action:none}
+.stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.stage video{object-fit:contain}
+.stage canvas{pointer-events:none}
+.stage.drawing canvas,.stage.tapping canvas{pointer-events:auto}
+.hud{position:absolute;top:6px;left:6px;display:grid;grid-template-columns:auto auto auto auto;column-gap:6px;align-items:baseline;padding:4px 8px 3px;border-radius:9px;background:rgba(7,17,12,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);pointer-events:none;font-size:10px;color:var(--chalk-2);line-height:1.2}
+.hud:empty{display:none}
+.hud .v{font:600 15px/1.25 var(--num);color:var(--chalk);text-align:right;margin-right:4px}
+.cstage .hud{grid-template-columns:auto auto}
+.tapbanner{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:var(--flag);color:var(--flag-ink);font-weight:600;font-size:13px;padding:6px 12px;border-radius:999px;pointer-events:none}
+.dock{flex:none;background:var(--turf)}
+.tl{position:relative;height:40px;margin:2px calc(var(--sar) + 8px) 0 calc(var(--sal) + 8px);touch-action:none;cursor:pointer}
+.tl-track{position:absolute;left:10px;right:10px;bottom:10px;height:4px;border-radius:2px;background:var(--turf-3)}
+.tl-fill{height:100%;width:0;background:var(--flag);border-radius:2px}
+.tl-thumb{position:absolute;bottom:4px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--chalk);box-shadow:0 0 0 3px rgba(16,35,26,.9);pointer-events:none}
+.tl-mark{position:absolute;top:1px;transform:translateX(-50%);font:700 11px/1 var(--num);color:#0b1a12;background:var(--c);border-radius:4px;padding:2px 4px 1px;pointer-events:none}
+.tl-mark::after{content:"";position:absolute;left:50%;top:100%;width:2px;height:12px;margin-left:-1px;background:var(--c)}
+.transport{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 calc(var(--sar) + var(--padx)) 6px calc(var(--sal) + var(--padx))}
+.tp-time{font:600 20px var(--num)}
+.tp-time small{color:var(--chalk-3);font-size:13px;margin-left:2px}
+.tp-mid{display:flex;align-items:center;gap:16px}
+.tp-btn{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--turf-2);border:1px solid var(--line)}
+.tp-btn svg{width:22px;height:22px}
+.tp-play{width:58px;height:58px;background:var(--flag);color:var(--flag-ink);border:0}
+.tp-play svg{width:26px;height:26px}
+.tp-speed{justify-self:end;font:600 19px var(--num);padding:7px 12px;border-radius:10px;border:1px solid var(--line);min-width:56px}
+.panels{max-height:36vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px calc(var(--sar) + var(--padx)) 10px calc(var(--sal) + var(--padx));border-top:1px solid var(--line)}
+.dock.collapsed .panels{display:none}
+.panel{display:none}
+.panel.active{display:block}
+.tabs{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line);padding-bottom:var(--sab);background:var(--turf-2)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 0 6px;font-size:10.5px;color:var(--chalk-3)}
+.tab svg{width:22px;height:22px}
+.tab.on{color:var(--flag)}
+.tools button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px}
+.tools svg{width:20px;height:20px}
+.swatches{display:flex;gap:8px}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid transparent;box-shadow:inset 0 0 0 2px rgba(0,0,0,.35)}
+.sw.on{border-color:var(--chalk)}
+.chart{width:100%;height:130px;display:block;margin-top:8px;touch-action:none;background:var(--turf-2);border-radius:10px}
+table.mt{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}
+table.mt th{font-weight:600;color:var(--chalk-3);font-size:11px;padding:3px 2px;text-align:right}
+table.mt th:first-child,table.mt td:first-child{text-align:left}
+table.mt td{padding:4px 2px;border-top:1px solid var(--line);text-align:right;font:600 15px var(--num)}
+table.mt td:first-child{font:500 12px var(--sys);color:var(--chalk-2)}
+table.mt td small{display:block;font-size:11px;color:var(--chalk-3);font-weight:500}
+table.mt td .up{color:var(--sky)} table.mt td .dn{color:var(--red)}
+.mk-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.mk-jump{flex:1;display:flex;align-items:center;gap:10px;text-align:left;padding:4px 0}
+.mk-dot{width:24px;height:24px;border-radius:6px;background:var(--c);color:#0b1a12;display:grid;place-items:center;font:700 14px var(--num)}
+.mk-name{font-size:14px;flex:1}
+.mk-time{font:600 17px var(--num);color:var(--chalk-2)}
+.mk-clear{width:30px;height:30px;border-radius:8px;color:var(--chalk-3);font-size:18px}
+.check{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.check .ic{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:700 14px/1 var(--num);margin-top:1px}
+.check.ok .ic{background:rgba(123,216,143,.16);color:var(--ok)}
+.check.warn .ic{background:rgba(255,90,71,.18);color:var(--red)}
+.check b{display:block;font-size:12px;color:var(--chalk-3);font-weight:600}
+.check p{margin:1px 0 0;font-size:13.5px}
+.check small{display:block;color:var(--chalk-3);font-size:11.5px;margin-top:2px}
+.resrow{display:flex;align-items:center;gap:8px;margin:7px 0}
+.resrow .lbl{color:var(--chalk-3);font-size:12px;width:52px;flex:none}
+.resrow .chips{flex:1}
+.cstages{flex:1 1 auto;min-height:0;display:flex;gap:2px;background:#000;position:relative}
+.cstages.col{flex-direction:column}
+.cstage{flex:1 1 0;min-width:0;min-height:0}
+.cstages.overlay{display:block}
+.cstages.overlay .cstage{position:absolute;inset:0}
+.cstages.overlay #cStageB{pointer-events:none}
+.cstage.out video{opacity:.4}
+.slabel{position:absolute;left:8px;bottom:8px;font-size:12px;background:rgba(7,17,12,.72);padding:3px 8px;border-radius:8px;pointer-events:none;max-width:calc(100% - 16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slabel b{font-family:var(--num);color:var(--flag);font-size:15px;margin-right:4px}
+.cstages.overlay #cStageB .slabel{left:auto;right:8px}
+.cstages.overlay #cStageB .hud{left:auto;right:8px}
+.cpanel{padding:2px calc(var(--sar) + var(--padx)) calc(var(--sab) + 10px) calc(var(--sal) + var(--padx));border-top:1px solid var(--line)}
+.cpanel .chips{gap:5px}
+.cpanel .chip{padding:6px 10px}
+input[type=range]{accent-color:var(--flag)}
+
+/* forms / sheet */
+.field{display:block;margin:12px 0}
+.field > span{display:block;font-size:12px;color:var(--chalk-3);margin-bottom:5px}
+.field input[type=text],.field input[type=date],.field input[type=password],.field textarea,.field select{width:100%;background:var(--turf);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
+.field textarea{resize:vertical;min-height:84px;line-height:1.5}
+.field input:focus,.field textarea:focus{border-color:var(--flag)}
+.clubs{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.clubs button{padding:11px 0 8px;border-radius:11px;background:var(--turf);border:1px solid var(--line);font:700 21px/1 var(--num)}
+.clubs button.on{background:var(--flag);color:var(--flag-ink);border-color:transparent}
+.clubs button.jp{font:600 13px/1.6 var(--sys)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toggle{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--turf);border:1px solid var(--line);width:100%;text-align:left;font-size:14px}
+.toggle .knob{flex:none;width:42px;height:26px;border-radius:13px;background:var(--turf-3);position:relative;transition:background .15s}
+.toggle .knob::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--chalk-2);transition:transform .15s}
+.toggle[aria-checked=true] .knob{background:var(--flag)}
+.toggle[aria-checked=true] .knob::after{transform:translateX(16px);background:var(--flag-ink)}
+.toggle span{flex:1}
+.toggle small{display:block;color:var(--chalk-3);font-size:12px}
+.sheet-back{position:fixed;inset:0;background:rgba(2,8,5,.6);display:flex;align-items:flex-end;justify-content:center;z-index:30;opacity:0;transition:opacity .18s}
+.sheet-back.open{opacity:1}
+.sheet{width:100%;max-width:560px;max-height:92dvh;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--turf-2);border-radius:20px 20px 0 0;padding:6px calc(var(--padx) + 2px) calc(var(--sab) + 18px);transform:translateY(24px);transition:transform .2s}
+.sheet-back.open .sheet{transform:none}
+.sheet-head{display:flex;align-items:center;position:sticky;top:-6px;background:var(--turf-2);padding:8px 0 4px;z-index:1}
+.sheet-head h2{flex:1;margin:0;font-size:17px}
+.sheet-actions{display:flex;gap:10px;margin-top:16px}
+.sheet-actions .btn{flex:1}
+.newprev{display:flex;gap:12px;align-items:center;margin:6px 0 4px}
+.newprev img{width:64px;height:86px;object-fit:cover;border-radius:8px;background:#000}
+.newprev p{margin:0;font-size:13px;color:var(--chalk-2)}
+.kv{margin:0;font-size:14px}
+.busy{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center;padding:0 16px calc(var(--sab) + 28px);background:rgba(2,8,5,.32)}
+.busy.dim{background:rgba(2,8,5,.62);align-items:center}
+.busy-card{width:100%;max-width:420px;background:var(--turf-2);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.busy-card .bar{height:6px;border-radius:3px;background:var(--turf-3);overflow:hidden}
+.busy-card .bar div{height:100%;width:0;background:var(--flag);transition:width .15s}
+.busy-card .btn{align-self:flex-end}
+.toast{position:fixed;left:0;right:0;margin:0 auto;width:max-content;bottom:calc(var(--sab) + 70px);transform:translateY(16px);opacity:0;background:var(--chalk);color:var(--turf);font-weight:600;font-size:13px;line-height:1.45;padding:8px 14px;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.35);pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ========== ホーム ========== -->
+<section id="home" class="screen active">
+  <header class="topbar">
+    <h1 class="brand"><svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20c4-1 9-5 13-14" fill="none" stroke="#F4C542" stroke-width="2.4" stroke-linecap="round"/><circle cx="18.5" cy="19" r="2.6" fill="#EEF1EA"/></svg><span id="homeTitle">スイング帳</span></h1>
+    <button id="btnSettings" class="icon-btn" aria-label="設定"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+  </header>
+
+  <div id="vSwings" class="view">
+    <div id="installTip" class="tip" hidden><p>Safariの共有ボタン →「ホーム画面に追加」で、アプリとして使えます。保存した動画も消えにくくなります。</p><button class="btn sm" id="installTipClose">閉じる</button></div>
+    <div class="lib-actions">
+      <button id="btnAdd" class="btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>スイングを追加</button>
+      <button id="btnAddBest" class="btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z"/></svg>ベストを登録</button>
+    </div>
+    <div id="clubFilter" class="chips scroll"></div>
+    <div class="row" id="libTools" hidden style="margin:10px 0 0"><button id="btnCompareMode" class="btn sm">2つを並べて比較</button><span class="spacer"></span></div>
+    <div id="grid" class="grid"></div>
+    <div id="empty" class="empty" hidden>
+      <h2>まずはスイングを入れましょう</h2>
+      <ol>
+        <li>調子が良かったときの動画を「ベストを登録」から入れておくと、新しいスイングと自動で比べます。</li>
+        <li>練習で撮った動画は「スイングを追加」。番手を選んで保存すると、骨格を解析してレッスンの項目をチェックします。</li>
+      </ol>
+      <p class="note">撮り方のコツ：後方（飛球線の後ろ）か正面から、頭から足まで全身が入るように。三脚などで固定し、カメラの「スロー」で撮るとコマ送りで細かく見られます。</p>
+    </div>
+    <div id="cmpBar" class="cmp-bar" hidden><span id="cmpText">比較するスイングを2つ選んでください</span><button id="cmpCancel" class="btn sm">やめる</button><button id="cmpGo" class="btn sm primary" disabled>比較する</button></div>
+    <p class="lib-foot" id="libFoot"></p>
+  </div>
+
+  <div id="vPractice" class="view" hidden>
+    <div class="h3">今の課題と練習メニュー</div>
+    <div id="focusList"></div>
+    <div class="aibox">
+      <div class="row" style="margin:0"><b style="flex:1;font-size:14px">AIの練習メニュー</b><button id="btnPlan" class="btn sm primary">作る</button></div>
+      <div id="planOut" class="md"></div>
+    </div>
+    <div class="h3">球筋の傾向</div>
+    <div id="tendList"></div>
+    <div class="h3">レッスンメモ</div>
+    <div class="row" style="margin-top:0"><button id="btnNotesPaste" class="btn sm">まとめて貼り付け</button><button id="btnNoteAdd" class="btn sm">1件追加</button><span class="spacer"></span></div>
+    <div id="notesList"></div>
+  </div>
+
+  <div id="vChat" class="view" hidden>
+    <div id="chatList" class="chat-list"></div>
+    <div class="composer">
+      <div class="cbar"><button id="chatAttach" class="chip">＋ スイングを添付</button><span class="spacer"></span><button id="chatClear" class="chip">履歴を消す</button></div>
+      <div class="cin"><textarea id="chatInput" rows="1" placeholder="気になること・質問を入力"></textarea><button id="chatSend" class="send" aria-label="送信"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.4-7.5c.8-.4.8-1.5 0-1.8L3.4 3.6c-.7-.3-1.4.3-1.3 1l1.2 6.1 9 1.3-9 1.3-1.2 6.1c-.1.7.6 1.3 1.3 1z"/></svg></button></div>
+    </div>
+  </div>
+
+  <nav class="mainnav" id="mainnav">
+    <button data-view="vSwings" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg>スイング</button>
+    <button data-view="vPractice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2.5 3.5L16 11H5"/></svg>練習</button>
+    <button data-view="vChat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>質問</button>
+  </nav>
+</section>
+
+<!-- ========== 再生・解析 ========== -->
+<section id="player" class="screen">
+  <header class="topbar">
+    <button class="icon-btn" id="pBack" aria-label="戻る"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="ptitle"><span id="pClub" class="club-badge"></span><span id="pTitle" class="t"></span><span id="pStar" class="star" hidden>★</span></div>
+  </header>
+  <div class="stage" id="pStage">
+    <video playsinline webkit-playsinline muted preload="auto" disablepictureinpicture></video>
+    <canvas></canvas>
+    <div class="hud" id="pHud"></div>
+    <div class="tapbanner" id="pTapBanner" hidden>ボールをタップ</div>
+  </div>
+  <div class="dock" id="pDock">
+    <div id="pTimeline"></div>
+    <div class="transport">
+      <span class="tp-time num" id="pTime">0.00<small>s</small></span>
+      <div class="tp-mid">
+        <button class="tp-btn" id="pPrev" aria-label="1コマ戻る"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2.2v14H6zM18.5 5.6v12.8L9.6 12z"/></svg></button>
+        <button class="tp-btn tp-play" id="pPlay" aria-label="再生"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg></button>
+        <button class="tp-btn" id="pNext" aria-label="1コマ進む"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.8 5H18v14h-2.2zM5.5 5.6v12.8l8.9-6.4z"/></svg></button>
+      </div>
+      <button class="tp-speed" id="pSpeed" aria-label="再生速度">1×</button>
+    </div>
+    <div class="panels">
+      <div class="panel" data-panel="play">
+        <div class="row"><span class="lbl">速度</span><div class="seg num" id="pSpeedSeg"><button data-v="1">1×</button><button data-v="0.5">½×</button><button data-v="0.25">¼×</button><button data-v="0.125">⅛×</button></div></div>
+        <div class="row"><span class="lbl">コマ送り</span><div class="seg" id="pFpsSeg"><button data-v="0">自動</button><button data-v="30" class="num">30</button><button data-v="60" class="num">60</button><button data-v="120" class="num">120</button><button data-v="240" class="num">240</button></div></div>
+        <div class="row"><span class="lbl">表示</span><button class="chip" id="pLoop">ループ</button><button class="chip" id="pMirror">左右反転</button></div>
+        <p class="note" id="pPlayNote"></p>
+      </div>
+      <div class="panel" data-panel="draw">
+        <div class="seg tools" id="pTools" style="margin-top:8px">
+          <button data-v="line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 19L19 5"/></svg>直線</button>
+          <button data-v="xline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 22L22 2" stroke-dasharray="3 3"/><path d="M7 17L17 7"/></svg>延長線</button>
+          <button data-v="circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="7.5"/></svg>円</button>
+          <button data-v="angle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4v15h0L18 8"/></svg>角度</button>
+          <button data-v="erase"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 15l8-9 8 7-6 7H9z"/><path d="M8.5 10.5l7 6"/></svg>消す</button>
+        </div>
+        <div class="row"><div class="swatches" id="pColors"></div><span class="spacer"></span><button class="btn sm" id="pUndo">元に戻す</button><button class="btn sm danger" id="pClear">全部消す</button></div>
+        <p class="note">動画の上をドラッグして描きます。端の丸をドラッグすると位置を直せます。「角度」は1本目を引くと縦の基準線つきで角度が出ます。</p>
+      </div>
+      <div class="panel" data-panel="pose">
+        <div id="poseEmpty">
+          <p class="note">AIが体の関節を見つけて、骨格と角度を表示します。初回はアプリと一緒に置いてあるAIモデル（約20MB）を読み込むので、Wi-Fiがおすすめです。2回目からはiPhoneに保存した分を使います。アドレスとフィニッシュのマーカーを先に置くと、その範囲だけを解析するので早く終わります。</p>
+          <button class="btn primary wide" id="pAnalyze">骨格を解析</button>
+        </div>
+        <div id="poseReady" hidden>
+          <div class="chips" id="poseToggles" style="margin-top:8px">
+            <button class="chip" data-show="pose">骨格</button><button class="chip" data-show="angles">角度</button><button class="chip" data-show="trail">手の軌道</button><button class="chip" data-show="head">頭の位置</button>
+          </div>
+          <div class="chips scroll" id="metricChips" style="margin-top:10px"></div>
+          <canvas id="pChart" class="chart"></canvas>
+          <div id="poseTable"></div>
+          <div class="row"><button class="btn sm" id="pAutoMark2">マーカーを自動設定</button><button class="btn sm" id="pReanalyze">解析し直す</button><span class="spacer"></span><button class="btn sm danger" id="pDelPose">解析を削除</button></div>
+          <p class="note">角度は1台のカメラ映像からのAI推定値で、撮る位置によって変わります（ひじ・ひざ・手首と胸・腰の回転は3Dの推定）。同じ位置から撮った動画どうしで比べてください。胸・腰の回転は＋が目標方向に開く向きです。</p>
+        </div>
+      </div>
+      <div class="panel" data-panel="marks">
+        <div id="pMarks"></div>
+        <div class="row"><button class="btn sm" id="pAutoMark">骨格から自動設定</button><span class="spacer"></span></div>
+        <p class="note">見たい位置までコマ送りして「ここ」。マーカーはチェックや比較の位置合わせに使います。</p>
+      </div>
+      <div class="panel" data-panel="diag">
+        <div id="diagBody"></div>
+      </div>
+      <div class="panel" data-panel="info">
+        <div id="pInfoForm"></div>
+        <button class="btn danger wide" id="pDelete" style="margin-top:14px">このスイングを削除</button>
+      </div>
+    </div>
+    <nav class="tabs" id="pTabs">
+      <button class="tab" data-tab="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l5.5-3.5z" fill="currentColor"/></svg>再生</button>
+      <button class="tab" data-tab="draw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg>描画</button>
+      <button class="tab" data-tab="pose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="2"/><path d="M12 7v7l-3 6M12 14l3 6M7 10l5-1 5 1"/></svg>骨格</button>
+      <button class="tab" data-tab="marks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V4h10l-2 3.5L16 11H6"/></svg>マーカー</button>
+      <button class="tab" data-tab="diag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l2.5 2.5L16 9"/><rect x="4" y="4" width="16" height="16" rx="4"/></svg>チェック</button>
+      <button class="tab" data-tab="info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h9"/></svg>情報</button>
+    </nav>
+  </div>
+</section>
+
+<!-- ========== 比較 ========== -->
+<section id="compare" class="screen">
+  <header class="topbar">
+    <button class="icon-btn" id="cBack" aria-label="戻る"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="ptitle"><span class="t">2つのスイングを比較</span></div>
+    <button class="btn sm" id="cLayout">重ねる</button>
+  </header>
+  <div class="cstages" id="cStages">
+    <div class="stage cstage" id="cStageA"><video playsinline webkit-playsinline muted preload="auto" disablepictureinpicture></video><canvas></canvas><div class="hud" id="cHudA"></div><div class="slabel" id="cLabelA"></div></div>
+    <div class="stage cstage" id="cStageB"><video playsinline webkit-playsinline muted preload="auto" disablepictureinpicture></video><canvas></canvas><div class="hud" id="cHudB"></div><div class="slabel" id="cLabelB"></div></div>
+  </div>
+  <div class="dock">
+    <div id="cTimeline"></div>
+    <div class="transport">
+      <span class="tp-time num" id="cTime">0.00<small>s</small></span>
+      <div class="tp-mid">
+        <button class="tp-btn" id="cPrev" aria-label="1コマ戻る"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2.2v14H6zM18.5 5.6v12.8L9.6 12z"/></svg></button>
+        <button class="tp-btn tp-play" id="cPlay" aria-label="再生"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg></button>
+        <button class="tp-btn" id="cNext" aria-label="1コマ進む"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.8 5H18v14h-2.2zM5.5 5.6v12.8l8.9-6.4z"/></svg></button>
+      </div>
+      <button class="tp-speed" id="cSpeed" aria-label="再生速度">1×</button>
+    </div>
+    <div class="cpanel">
+      <div class="row"><span class="lbl">合わせる</span><div class="seg" id="cSync"><button data-v="start">最初</button><button data-v="top">トップ</button><button data-v="impact">インパクト</button><button data-v="tempo">テンポ</button></div></div>
+      <div class="chips" id="cToggles"><button class="chip" data-t="pose">骨格</button><button class="chip" data-t="angles">角度</button><button class="chip" data-t="drawings">描画</button><button class="chip" data-t="mirA">A反転</button><button class="chip" data-t="mirB">B反転</button><button class="chip" data-t="loop">ループ</button></div>
+      <div class="row" id="cOpacityRow" hidden><span class="lbl">Bの濃さ</span><input type="range" id="cOpacity" min="0.15" max="0.85" step="0.05" value="0.5" style="flex:1"></div>
+    </div>
+  </div>
+</section>
+
+<div id="sheetBack" class="sheet-back" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="sheet-head"><h2 id="sheetTitle"></h2><button id="sheetClose" class="icon-btn" aria-label="閉じる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div id="sheetBody"></div></div></div>
+<div id="busy" class="busy" hidden><div class="busy-card"><div id="busyText"></div><div class="bar" id="busyBarWrap"><div id="busyBar"></div></div><button id="busyCancel" class="btn sm">中止</button></div></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<input id="fileInput" type="file" accept="video/*" hidden>
+<input id="noteFile" type="file" accept=".txt,.md,text/plain" hidden>
+<noscript>このアプリはJavaScriptを有効にして使ってください。</noscript>
+<script type="module" src="app.js"></script>
+</body>
+</html>

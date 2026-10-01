@@ -1,0 +1,17 @@
+{
+  "name": "スイング帳",
+  "short_name": "スイング帳",
+  "description": "ゴルフのスイング動画をスロー・コマ送り・AI骨格解析でチェックし、レッスンの指摘と練習メニューにつなげるアプリ",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#10231A",
+  "theme_color": "#10231A",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
